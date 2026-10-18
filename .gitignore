@@ -15,3 +15,5 @@ storage/documents/*
 data/
 *.log
 
+.vercel
+.env*
