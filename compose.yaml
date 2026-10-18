@@ -1,0 +1,51 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: topline_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: topline
+      POSTGRES_PASSWORD: topline_secret
+      POSTGRES_DB: topline_dev
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U topline -d topline_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: topline_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql://topline:topline_secret@db:5432/topline_dev
+      - TEST_DATABASE_URL=postgresql://topline:topline_secret@db:5432/topline_test
+      - APP_ENV=development
+      - SECRET_KEY=change-this-in-production-use-a-secure-random-key-at-least-32-chars
+      - PLATFORM_ACCESS_FEE_MINOR=100000
+      - PLATFORM_ACCESS_CURRENCY=KES
+      - DOCUMENT_STORAGE_DIR=/app/storage/documents
+      - MPESA_ENVIRONMENT=sandbox
+      - MPESA_CONSUMER_KEY=placeholder_consumer_key
+      - MPESA_CONSUMER_SECRET=placeholder_consumer_secret
+      - MPESA_SHORTCODE=174379
+      - MPESA_PASSKEY=placeholder_passkey
+      - OTP_PROVIDER=mock
+    volumes:
+      - document_storage:/app/storage/documents
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  postgres_data:
+  document_storage:
+
